@@ -1,5 +1,5 @@
 import styles from "./login.module.css";
-import {ForwardedRef, InputHTMLAttributes, useLayoutEffect, useRef} from "react";
+import {FormEvent, ForwardedRef, InputHTMLAttributes, useLayoutEffect, useRef} from "react";
 import {useFormWithValidation} from "../../hooks/useFormWithValidation.ts";
 
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
@@ -13,7 +13,7 @@ const Input = ({inputRef, error = "", value = "", className, ...props}: InputPro
     return (
         <label className={styles.label}>
             <input className={className} ref={inputRef} {...props} value={value}/>
-            <span className={styles.error} id="place-name-error">
+            <span className={styles.error}>
                 {error || ""}
             </span>
         </label>
@@ -42,8 +42,12 @@ export const Login = () => {
             password: ""
     });
 
+    const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+    }
+
     return (
-        <form className={styles.form}>
+        <form className={styles.form} noValidate onSubmit={handleSubmit}>
             <h3 className={styles.title}>Вход</h3>
             <Input
                 inputRef={inputRef}
