@@ -1,6 +1,10 @@
 import styles from "./login.module.css";
 import {FormEvent, ForwardedRef, InputHTMLAttributes, useLayoutEffect, useRef} from "react";
 import {useFormWithValidation} from "../../hooks/useFormWithValidation.ts";
+import {TLoginData} from "../../utils/types.ts";
+import {authSelector, sendErrorSelector, sendingSelector, setFormValue} from "../../services/authSlice.ts";
+import {useDispatch, useSelector} from "../../services/store.ts";
+import {login} from "../../services/actions.ts";
 
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
     inputRef?: ForwardedRef<HTMLInputElement>,
@@ -20,12 +24,7 @@ const Input = ({inputRef, error = "", value = "", className, ...props}: InputPro
     )
 };
 
-type LoginData = {
-    email: string,
-    password: string
-}
-
-export const PWD_REGEX = /^[a-zA-Z0-9!@#$%^&*()_+{}\[\]:;<>,.?~\\/-]{6,}$/;
+export const PWD_REGEX = /^[a-zA-Z0-9!@#$%^&*()_+{}[\]:;<>,.?~\\/-]{6,}$/;
 export const EMAIL_REGEX = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/;
 
 const formValidators = {
@@ -41,8 +40,9 @@ const formValidators = {
 
 export const Login = () => {
     const inputRef = useRef<HTMLInputElement | null>(null);
-    const isSending = false;
-    const sendingError: string | null = "jdskghfdkjgh"; //null;
+    const isSending = useSelector(sendingSelector);
+    const sendingError = useSelector(sendErrorSelector);
+    const dispatch = useDispatch();
 
     useLayoutEffect(() => {
         if (inputRef.current) {
@@ -51,13 +51,11 @@ export const Login = () => {
     }, []);
 
     const { values, handleChange, errors, isValid } =
-        useFormWithValidation<LoginData>({
-            email: "",
-            password: ""
-    }, formValidators);
+        useFormWithValidation<TLoginData>(authSelector, setFormValue, formValidators);
 
     const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
+        dispatch(login(values))
     }
 
     return (

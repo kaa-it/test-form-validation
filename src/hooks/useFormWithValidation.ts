@@ -1,11 +1,14 @@
-import React, {ChangeEvent, useCallback} from "react";
+import React, {ChangeEvent} from "react";
+import {ActionCreatorWithPayload} from "@reduxjs/toolkit";
+import {TFieldType} from "../utils/types.ts";
+import {RootState, useSelector} from "../services/store.ts";
+import {useDispatch} from "../services/store.ts";
 
 type TUseFormWithValidation<T> = {
     values: T,
-    errors: T,
+    errors: TErrorState<T>,
     isValid: boolean,
     handleChange: (evt: ChangeEvent<HTMLInputElement>) => void,
-    resetForm: (newValues?: T, newErrors?: T, newIsValid?: boolean) => void
 }
 
 type TFormValidators<T> = {
@@ -15,34 +18,33 @@ type TFormValidators<T> = {
     }
 };
 
+type TErrorState<T> = { [key in keyof T]: string};
+
+function initError<T>(a: T): TErrorState<T> {
+    return Object.keys(a as object).reduce((acc, k) => {
+        acc[k as keyof T] = ""; return acc
+    }, {} as TErrorState<T>);
+}
+
 export function useFormWithValidation<T>(
-    initialState: T,
+    selector: (state: RootState) => T,
+    setFormValue: ActionCreatorWithPayload<TFieldType<T>>,
     validators: TFormValidators<T>
 ): TUseFormWithValidation<T> {
-    const [values, setValues] = React.useState<T>(initialState);
-    const [errors, setErrors] = React.useState<T>(initialState);
+    const values = useSelector(selector);
+    const [errors, setErrors] = React.useState<TErrorState<T>>(initError<T>(values));
     const [isValid, setIsValid] = React.useState(false);
+    const dispatch = useDispatch();
 
     const handleChange = (evt: ChangeEvent<HTMLInputElement>) => {
         const input = evt.target;
         const value = input.value;
         const name = input.name as keyof T;
         const isValid = validators[name]?.validator(value) ?? true;
-        setValues({ ...values, [name]: value });
-        if (!isValid) {
-            setErrors({ ...errors, [name]: validators[name]!.message });
-        }
-       setIsValid(isValid);
+        dispatch(setFormValue({ field: name, value}));
+        setErrors({ ...errors, [name]: !isValid ? validators[name]!.message : undefined});
+        setIsValid(isValid);
     };
 
-    const resetForm = useCallback(
-        (newValues = initialState, newErrors = initialState, newIsValid = false) => {
-            setValues(newValues);
-            setErrors(newErrors);
-            setIsValid(newIsValid);
-        },
-        [setValues, setErrors, setIsValid, initialState]
-    );
-
-    return { values, handleChange, resetForm, errors, isValid };
+    return { values, handleChange, errors, isValid };
 }
