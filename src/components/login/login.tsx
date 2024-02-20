@@ -25,6 +25,20 @@ type LoginData = {
     password: string
 }
 
+export const PWD_REGEX = /^[a-zA-Z0-9!@#$%^&*()_+{}\[\]:;<>,.?~\\/-]{6,}$/;
+export const EMAIL_REGEX = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/;
+
+const formValidators = {
+    email: {
+        validator: (value: string) => EMAIL_REGEX.test(value),
+        message: "Укажите корректный email.",
+    },
+    password: {
+        validator: (value: string) => PWD_REGEX.test(value),
+        message: "Укажите пароль посложнее.",
+    }
+};
+
 export const Login = () => {
     const inputRef = useRef<HTMLInputElement | null>(null);
     const isSending = false;
@@ -40,7 +54,7 @@ export const Login = () => {
         useFormWithValidation<LoginData>({
             email: "",
             password: ""
-    });
+    }, formValidators);
 
     const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -59,7 +73,7 @@ export const Login = () => {
                 value={values.email || ''}
                 error={errors.email}
                 onChange={handleChange}
-                required
+                aria-invalid={!!errors.email}
             />
             <Input
                 type='password'
@@ -70,7 +84,7 @@ export const Login = () => {
                 value={values.password || ''}
                 error={errors.password}
                 onChange={handleChange}
-                required
+                aria-invalid={!!errors.password}
             />
             <button
                 className={styles.button}

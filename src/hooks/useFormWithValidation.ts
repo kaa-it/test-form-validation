@@ -8,7 +8,17 @@ type TUseFormWithValidation<T> = {
     resetForm: (newValues?: T, newErrors?: T, newIsValid?: boolean) => void
 }
 
-export function useFormWithValidation<T>(initialState: T): TUseFormWithValidation<T> {
+type TFormValidators<T> = {
+    [key in keyof T]?: {
+        validator: (value: string) => boolean,
+        message: string,
+    }
+};
+
+export function useFormWithValidation<T>(
+    initialState: T,
+    validators: TFormValidators<T>
+): TUseFormWithValidation<T> {
     const [values, setValues] = React.useState<T>(initialState);
     const [errors, setErrors] = React.useState<T>(initialState);
     const [isValid, setIsValid] = React.useState(false);
@@ -16,11 +26,13 @@ export function useFormWithValidation<T>(initialState: T): TUseFormWithValidatio
     const handleChange = (evt: ChangeEvent<HTMLInputElement>) => {
         const input = evt.target;
         const value = input.value;
-        const name = input.name;
+        const name = input.name as keyof T;
+        const isValid = validators[name]?.validator(value) ?? true;
         setValues({ ...values, [name]: value });
-        setErrors({ ...errors, [name]: input.validationMessage });
-        const form = input.closest("form");
-        setIsValid((form && form.checkValidity()) ?? false);
+        if (!isValid) {
+            setErrors({ ...errors, [name]: validators[name]!.message });
+        }
+       setIsValid(isValid);
     };
 
     const resetForm = useCallback(
